@@ -14,7 +14,7 @@ jobs:
         config:
           - name: Android
             os: ubuntu-latest
-            target: Android
+            target: Android64
 
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -23,18 +23,11 @@ jobs:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Thiết lập Bộ cài đặt Geode SDK
-        uses: geode-sdk/build-config@v3
+      - name: Khởi tạo môi trường Geode Android
+        uses: geode-sdk/build-geode-mod@main
         with:
           target: ${{ matrix.config.target }}
-
-      - name: Xóa các file phân tích hiệu năng độc quyền PC
-        run: |
-          rm -f CodegenData.json codegenProfilerHooks.js src/profilerHooks.cpp
-
-      - name: Biên dịch Mod (Build)
-        run: |
-          cli mod build --release
+          export-binaries: true
 
   package:
     name: Package builds
@@ -42,8 +35,12 @@ jobs:
     needs: ['build']
 
     steps:
+      - name: Gom cụm tệp tin .geode
+        uses: geode-sdk/build-geode-mod/combine@main
+        id: build
+
       - name: Tải file .geode về máy
         uses: actions/upload-artifact@v4
         with:
           name: bismuth-android
-          path: build/*.geode
+          path: ${{ steps.build.outputs.build-output }}
