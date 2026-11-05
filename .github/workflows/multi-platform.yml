@@ -23,14 +23,19 @@ jobs:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Thiết lập Geode SDK và Compiler
-        uses: geode-sdk/build-config@main
-        with:
-          target: ${{ matrix.config.target }}
+      - name: Cài đặt và Thiết lập Geode CLI
+        run: |
+          curl -sSL https://githubusercontent.com | sh
+          echo "$HOME/.geode/bin" >> $GITHUB_PATH
+
+      - name: Khởi tạo Geode Profile cho Android
+        run: |
+          geode profile add --name android --target android
+          geode profile select android
 
       - name: Biên dịch Mod (Build)
         run: |
-          cli mod build --release
+          geode mod build --release
 
   package:
     name: Package builds
