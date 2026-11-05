@@ -23,26 +23,18 @@ jobs:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Cài đặt, Cấu hình Geode và Dọn dẹp Rác
+      - name: Thiết lập Bộ cài đặt Geode SDK
+        uses: geode-sdk/build-config@v3
+        with:
+          target: ${{ matrix.config.target }}
+
+      - name: Xóa các file phân tích hiệu năng độc quyền PC
         run: |
-          # 1. Tải và cài đặt Geode CLI độc lập
-          curl -sSL https://githubusercontent.com | sh
-          
-          # 2. Định nghĩa đường dẫn chạy lệnh trực tiếp cho phiên làm việc này
-          export PATH="$HOME/.geode/bin:$PATH"
-          echo "$HOME/.geode/bin" >> $GITHUB_PATH
-          
-          # 3. Khởi tạo Profile đồ họa mục tiêu Android
-          $HOME/.geode/bin/geode profile add --name android --target android
-          $HOME/.geode/bin/geode profile select android
-          
-          # 4. Xóa các file phân tích hiệu năng độc quyền PC để chống treo
           rm -f CodegenData.json codegenProfilerHooks.js src/profilerHooks.cpp
 
       - name: Biên dịch Mod (Build)
         run: |
-          export PATH="$HOME/.geode/bin:$PATH"
-          geode mod build --release
+          cli mod build --release
 
   package:
     name: Package builds
