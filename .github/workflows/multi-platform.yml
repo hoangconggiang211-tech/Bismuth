@@ -23,12 +23,12 @@ jobs:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Khởi tạo môi trường Geode Android và Sửa lỗi CMake
+      - name: Khởi tạo môi trường Geode Android và Sửa lỗi Thư viện
         uses: geode-sdk/build-geode-mod@main
         with:
           target: ${{ matrix.config.target }}
-          # Ép CMake chấp nhận cấu trúc mã nguồn cũ của Bismuth để không báo lỗi đỏ
-          configure-args: "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+          # Bổ sung cờ ép bỏ qua hàm consteval kiểm tra chuỗi của thư viện fmt cũ trên C++23
+          configure-args: "-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DFMT_USE_CONSTEXPR=0 -DFMT_COMPILE_TIME_CHECKS=0"
 
   package:
     name: Package builds
