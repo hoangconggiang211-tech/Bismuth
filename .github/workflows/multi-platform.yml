@@ -15,28 +15,25 @@ jobs:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Cài đặt Geode CLI độc lập
+      - name: Thực hiện cài đặt, vá lỗi đồ họa và biên dịch tổng lực
         run: |
+          # 1. Tải và cài đặt Geode CLI
           curl -sSL https://githubusercontent.com | sh
-          echo "$HOME/.geode/bin" >> $GITHUB_PATH
-
-      - name: Khởi tạo Profile Android
-        run: |
+          
+          # 2. Khai báo và ép giữ đường dẫn chạy lệnh cho toàn bộ khối này
           export PATH="$HOME/.geode/bin:$PATH"
+          
+          # 3. Khởi tạo và chọn Profile đồ họa Android
           geode profile add --name android --target android
           geode profile select android
-
-      - name: Sửa tận gốc cấu hình CMake chống lỗi PCH và lỗi FMT
-        run: |
-          # Chèn lệnh vô hiệu hóa PCH và lỗi FMT thẳng vào đầu file CMakeLists.txt gốc để ép CMake phải nghe theo
+          
+          # 4. Sửa tận gốc file cấu hình để khóa chết lỗi PCH và lỗi FMT
           sed -i '1s/^/set(CMAKE_DISABLE_PRECOMPILED_HEADERS ON CACHE BOOL "" FORCE)\nset(DISABLE_PCH ON CACHE BOOL "" FORCE)\nset(GLSLANG_ENABLE_PCH OFF CACHE BOOL "" FORCE)\nset(FMT_USE_CONSTEXPR OFF CACHE BOOL "" FORCE)\nset(FMT_COMPILE_TIME_CHECKS OFF CACHE BOOL "" FORCE)\n/' CMakeLists.txt
           
-          # Xóa bỏ hoàn toàn các file phân tích hiệu năng độc quyền PC gây treo máy chủ
+          # 5. Xóa bỏ các file phân tích hiệu năng của PC gây treo máy chủ
           rm -f CodegenData.json codegenProfilerHooks.js src/profilerHooks.cpp
-
-      - name: Biên dịch Mod (Build)
-        run: |
-          export PATH="$HOME/.geode/bin:$PATH"
+          
+          # 6. Kích hoạt biên dịch xuất file ngay lập tức
           geode mod build --release
 
       - name: Đóng gói và Tải file .geode về máy
