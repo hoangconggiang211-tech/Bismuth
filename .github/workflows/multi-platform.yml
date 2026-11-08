@@ -27,14 +27,7 @@ jobs:
         uses: geode-sdk/build-geode-mod@main
         with:
           target: ${{ matrix.config.target }}
-          # Bộ tham số sửa lỗi: Tắt file PCH lỗi đồ họa, tắt hằng số ép chuỗi fmt, tắt cảnh báo nghiêm ngặt
-          configure-args: |
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-            -DFMT_USE_CONSTEXPR=0
-            -DFMT_COMPILE_TIME_CHECKS=0
-            -DDISABLE_PCH=ON
-            -DCMAKE_DISABLE_PRECOMPILED_HEADERS=ON
-            -DGLSLANG_ENABLE_PCH=OFF
+          configure-args: "-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DFMT_USE_CONSTEXPR=0 -DFMT_COMPILE_TIME_CHECKS=0 -DDISABLE_PCH=ON -DCMAKE_DISABLE_PRECOMPILED_HEADERS=ON -DGLSLANG_ENABLE_PCH=OFF"
 
   package:
     name: Package builds
