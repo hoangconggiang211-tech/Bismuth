@@ -15,29 +15,34 @@ jobs:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Thực hiện cài đặt, vá lỗi đồ họa và biên dịch tổng lực
+      - name: Vá tận gốc cấu hình CMake chống lỗi PCH và lỗi FMT
         run: |
-          # 1. Tải và cài đặt Geode CLI
-          curl -sSL https://githubusercontent.com | sh
+          # Tạo một file cấu hình tạm thời chứa các lệnh ép khóa chết lỗi PCH và lỗi FMT
+          echo -e "set(CMAKE_DISABLE_PRECOMPILED_HEADERS ON CACHE BOOL \"\" FORCE)\nset(DISABLE_PCH ON CACHE BOOL \"\" FORCE)\nset(GLSLANG_ENABLE_PCH OFF CACHE BOOL \"\" FORCE)\nset(FMT_USE_CONSTEXPR OFF CACHE BOOL \"\" FORCE)\nset(FMT_COMPILE_TIME_CHECKS OFF CACHE BOOL \"\" FORCE)" > temp_config.txt
           
-          # 2. Khai báo và ép giữ đường dẫn chạy lệnh cho toàn bộ khối này
-          export PATH="$HOME/.geode/bin:$PATH"
+          # Chèn các lệnh ép khóa này lên dòng đầu tiên của file CMakeLists.txt gốc
+          cat temp_config.txt CMakeLists.txt > CMakeLists.new && mv CMakeLists.new CMakeLists.txt
           
-          # 3. Khởi tạo và chọn Profile đồ họa Android
-          geode profile add --name android --target android
-          geode profile select android
-          
-          # 4. Sửa tận gốc file cấu hình để khóa chết lỗi PCH và lỗi FMT
-          sed -i '1s/^/set(CMAKE_DISABLE_PRECOMPILED_HEADERS ON CACHE BOOL "" FORCE)\nset(DISABLE_PCH ON CACHE BOOL "" FORCE)\nset(GLSLANG_ENABLE_PCH OFF CACHE BOOL "" FORCE)\nset(FMT_USE_CONSTEXPR OFF CACHE BOOL "" FORCE)\nset(FMT_COMPILE_TIME_CHECKS OFF CACHE BOOL "" FORCE)\n/' CMakeLists.txt
-          
-          # 5. Xóa bỏ các file phân tích hiệu năng của PC gây treo máy chủ
+          # Xóa bỏ hoàn toàn các file phân tích hiệu năng độc quyền PC gây treo máy chủ
           rm -f CodegenData.json codegenProfilerHooks.js src/profilerHooks.cpp
-          
-          # 6. Kích hoạt biên dịch xuất file ngay lập tức
-          geode mod build --release
 
-      - name: Đóng gói và Tải file .geode về máy
+      - name: Khởi tạo môi trường và Biên dịch tổng lực cho Android
+        uses: geode-sdk/build-geode-mod@main
+        with:
+          target: Android64
+
+  package:
+    name: Package builds
+    runs-on: ubuntu-latest
+    needs: ['build']
+
+    steps:
+      - name: Gom cụm tệp tin .geode
+        uses: geode-sdk/build-geode-mod/combine@main
+        id: build
+
+      - name: Tải file .geode về máy
         uses: actions/upload-artifact@v4
         with:
           name: bismuth-android
-          path: build/*.geode
+          path: ${{ steps.build.outputs.build-output }}
