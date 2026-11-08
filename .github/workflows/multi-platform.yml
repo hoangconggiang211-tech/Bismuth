@@ -17,7 +17,7 @@ jobs:
 
       - name: Vá tận gốc cấu hình CMake chống lỗi PCH và lỗi FMT
         run: |
-          # Tạo một file cấu hình tạm thời chứa các lệnh ép khóa chết lỗi PCH và lỗi FMT
+          # Tạo file cấu hình tạm thời chứa các lệnh ép khóa chết lỗi PCH và lỗi FMT
           echo -e "set(CMAKE_DISABLE_PRECOMPILED_HEADERS ON CACHE BOOL \"\" FORCE)\nset(DISABLE_PCH ON CACHE BOOL \"\" FORCE)\nset(GLSLANG_ENABLE_PCH OFF CACHE BOOL \"\" FORCE)\nset(FMT_USE_CONSTEXPR OFF CACHE BOOL \"\" FORCE)\nset(FMT_COMPILE_TIME_CHECKS OFF CACHE BOOL \"\" FORCE)" > temp_config.txt
           
           # Chèn các lệnh ép khóa này lên dòng đầu tiên của file CMakeLists.txt gốc
@@ -28,6 +28,9 @@ jobs:
 
       - name: Khởi tạo môi trường và Biên dịch tổng lực cho Android
         uses: geode-sdk/build-geode-mod@main
+        # Ép biến môi trường hệ thống CMake chấp nhận chính sách phiên bản cũ cho mọi gói tải về
+        env:
+          CMAKE_ARGS: "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
         with:
           target: Android64
 
