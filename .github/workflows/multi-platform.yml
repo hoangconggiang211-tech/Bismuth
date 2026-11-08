@@ -8,39 +8,39 @@ on:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - name: Android
-            os: ubuntu-latest
-            target: Android64
-
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
+    name: Android Build
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Khởi tạo môi trường Geode Android và Vá lỗi Đồ họa Tổng lực
-        uses: geode-sdk/build-geode-mod@main
-        with:
-          target: ${{ matrix.config.target }}
-          configure-args: "-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DFMT_USE_CONSTEXPR=0 -DFMT_COMPILE_TIME_CHECKS=0 -DDISABLE_PCH=ON -DCMAKE_DISABLE_PRECOMPILED_HEADERS=ON -DGLSLANG_ENABLE_PCH=OFF"
+      - name: Cài đặt Geode CLI độc lập
+        run: |
+          curl -sSL https://githubusercontent.com | sh
+          echo "$HOME/.geode/bin" >> $GITHUB_PATH
 
-  package:
-    name: Package builds
-    runs-on: ubuntu-latest
-    needs: ['build']
+      - name: Khởi tạo Profile Android
+        run: |
+          export PATH="$HOME/.geode/bin:$PATH"
+          geode profile add --name android --target android
+          geode profile select android
 
-    steps:
-      - name: Gom cụm tệp tin .geode
-        uses: geode-sdk/build-geode-mod/combine@main
-        id: build
+      - name: Sửa tận gốc cấu hình CMake chống lỗi PCH và lỗi FMT
+        run: |
+          # Chèn lệnh vô hiệu hóa PCH và lỗi FMT thẳng vào đầu file CMakeLists.txt gốc để ép CMake phải nghe theo
+          sed -i '1s/^/set(CMAKE_DISABLE_PRECOMPILED_HEADERS ON CACHE BOOL "" FORCE)\nset(DISABLE_PCH ON CACHE BOOL "" FORCE)\nset(GLSLANG_ENABLE_PCH OFF CACHE BOOL "" FORCE)\nset(FMT_USE_CONSTEXPR OFF CACHE BOOL "" FORCE)\nset(FMT_COMPILE_TIME_CHECKS OFF CACHE BOOL "" FORCE)\n/' CMakeLists.txt
+          
+          # Xóa bỏ hoàn toàn các file phân tích hiệu năng độc quyền PC gây treo máy chủ
+          rm -f CodegenData.json codegenProfilerHooks.js src/profilerHooks.cpp
 
-      - name: Tải file .geode về máy
+      - name: Biên dịch Mod (Build)
+        run: |
+          export PATH="$HOME/.geode/bin:$PATH"
+          geode mod build --release
+
+      - name: Đóng gói và Tải file .geode về máy
         uses: actions/upload-artifact@v4
         with:
           name: bismuth-android
-          path: ${{ steps.build.outputs.build-output }}
+          path: build/*.geode
